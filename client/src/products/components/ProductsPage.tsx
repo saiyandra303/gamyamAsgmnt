@@ -17,6 +17,10 @@ import { ProductDetailsModal } from './ProductDetailsModal';
 import { useProducts } from '../hooks/useProducts';
 import type { Product, ViewMode } from '../types';
 
+
+
+
+
 export const ProductsPage: React.FC = () => {
   const {
     products,
