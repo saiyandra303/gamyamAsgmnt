@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -13,9 +13,15 @@ import {
   Typography,
   Avatar,
   IconButton,
-  Tooltip
+  Tooltip,
+  TablePagination,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Divider
 } from '@mui/material';
-import { Edit, Delete, Visibility, Inventory, TrendingUp, TrendingDown } from '@mui/icons-material';
+import { Edit, Delete, Visibility, Inventory, TrendingUp, TrendingDown, FirstPage, LastPage, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import type { Product } from '../types';
 
 interface ProductTableProps {
@@ -26,6 +32,24 @@ interface ProductTableProps {
 }
 
 export const ProductTable: React.FC<ProductTableProps> = ({ products, onEdit, onDelete, onViewDetails }) => {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Calculate pagination
+  const startIndex = page * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedProducts = products.slice(startIndex, endIndex);
+  const totalProducts = products.length;
+  const totalPages = Math.ceil(totalProducts / rowsPerPage);
   const getCategoryInfo = (category: string) => {
     switch (category) {
       case 'Sports': return { color: 'success', icon: '⚽', bg: '#e8f5e8' };
@@ -86,7 +110,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, onEdit, on
           </TableRow>
         </TableHead>
         <TableBody>
-          {products.map((product, index) => {
+          {paginatedProducts.map((product, index) => {
             const categoryInfo = getCategoryInfo(product.category);
             const stockInfo = getStockStatus(product.stock);
             
@@ -310,6 +334,166 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, onEdit, on
           })}
         </TableBody>
       </Table>
+      
+      {/* Enhanced Pagination Section */}
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        p: 2,
+        borderTop: '1px solid rgba(224, 224, 224, 0.5)',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'
+      }}>
+        {/* Pagination Info */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+            Showing {startIndex + 1}-{Math.min(endIndex, totalProducts)} of {totalProducts} products
+          </Typography>
+          
+          <Divider orientation="vertical" flexItem sx={{ height: 20 }} />
+          
+          {/* Rows per page selector */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Rows per page:
+            </Typography>
+            <FormControl size="small" sx={{ minWidth: 80 }}>
+              <Select
+                value={rowsPerPage}
+                onChange={(e) => handleChangeRowsPerPage(e as React.ChangeEvent<HTMLInputElement>)}
+                sx={{
+                  '& .MuiSelect-select': {
+                    py: 0.5,
+                    fontSize: '0.875rem'
+                  }
+                }}
+              >
+                <MenuItem value={5}>5</MenuItem>
+                <MenuItem value={10}>10</MenuItem>
+                <MenuItem value={25}>25</MenuItem>
+                <MenuItem value={50}>50</MenuItem>
+                <MenuItem value={100}>100</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+
+        {/* Enhanced Pagination Controls */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* First Page Button */}
+          <Tooltip title="First Page">
+            <span>
+              <IconButton 
+                onClick={() => setPage(0)}
+                disabled={page === 0}
+                size="small"
+                sx={{
+                  bgcolor: page === 0 ? 'transparent' : 'primary.50',
+                  '&:hover': {
+                    bgcolor: page === 0 ? 'transparent' : 'primary.100'
+                  }
+                }}
+              >
+                <FirstPage fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {/* Previous Page Button */}
+          <Tooltip title="Previous Page">
+            <span>
+              <IconButton 
+                onClick={() => setPage(page - 1)}
+                disabled={page === 0}
+                size="small"
+                sx={{
+                  bgcolor: page === 0 ? 'transparent' : 'primary.50',
+                  '&:hover': {
+                    bgcolor: page === 0 ? 'transparent' : 'primary.100'
+                  }
+                }}
+              >
+                <KeyboardArrowLeft fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {/* Page Numbers */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mx: 1 }}>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i;
+              } else if (page < 2) {
+                pageNum = i;
+              } else if (page > totalPages - 3) {
+                pageNum = totalPages - 5 + i;
+              } else {
+                pageNum = page - 2 + i;
+              }
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={pageNum === page ? 'contained' : 'outlined'}
+                  size="small"
+                  onClick={() => setPage(pageNum)}
+                  sx={{
+                    minWidth: 36,
+                    height: 32,
+                    fontSize: '0.875rem',
+                    fontWeight: pageNum === page ? 600 : 400,
+                    ...(pageNum === page && {
+                      background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                      boxShadow: '0 2px 8px rgba(33, 150, 243, 0.3)'
+                    })
+                  }}
+                >
+                  {pageNum + 1}
+                </Button>
+              );
+            })}
+          </Box>
+
+          {/* Next Page Button */}
+          <Tooltip title="Next Page">
+            <span>
+              <IconButton 
+                onClick={() => setPage(page + 1)}
+                disabled={page >= totalPages - 1}
+                size="small"
+                sx={{
+                  bgcolor: page >= totalPages - 1 ? 'transparent' : 'primary.50',
+                  '&:hover': {
+                    bgcolor: page >= totalPages - 1 ? 'transparent' : 'primary.100'
+                  }
+                }}
+              >
+                <KeyboardArrowRight fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          {/* Last Page Button */}
+          <Tooltip title="Last Page">
+            <span>
+              <IconButton 
+                onClick={() => setPage(totalPages - 1)}
+                disabled={page >= totalPages - 1}
+                size="small"
+                sx={{
+                  bgcolor: page >= totalPages - 1 ? 'transparent' : 'primary.50',
+                  '&:hover': {
+                    bgcolor: page >= totalPages - 1 ? 'transparent' : 'primary.100'
+                  }
+                }}
+              >
+                <LastPage fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      </Box>
     </TableContainer>
   );
 };
